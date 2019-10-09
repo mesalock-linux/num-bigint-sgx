@@ -2779,6 +2779,24 @@ impl BigInt {
         (self.sign, self.data.to_bytes_le())
     }
 
+    /// Returns the sign and the u32 digits representation of the `BigInt` in little-endian order.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use num_bigint::{BigInt, Sign};
+    ///
+    /// assert_eq!(BigInt::from(-1125).to_u32_digits(), (Sign::Minus, vec![1125]));
+    /// assert_eq!(BigInt::from(4294967295u32).to_u32_digits(), (Sign::Plus, vec![4294967295]));
+    /// assert_eq!(BigInt::from(4294967296u64).to_u32_digits(), (Sign::Plus, vec![0, 1]));
+    /// assert_eq!(BigInt::from(-112500000000i64).to_u32_digits(), (Sign::Minus, vec![830850304, 26]));
+    /// assert_eq!(BigInt::from(112500000000i64).to_u32_digits(), (Sign::Plus, vec![830850304, 26]));
+    /// ```
+    #[inline]
+    pub fn to_u32_digits(&self) -> (Sign, Vec<u32>) {
+        (self.sign, self.data.to_u32_digits())
+    }
+
     /// Returns the two's complement byte representation of the `BigInt` in big-endian byte order.
     ///
     /// # Examples
@@ -2973,7 +2991,10 @@ impl BigInt {
         }
 
         // The sign of the result follows the modulus, like `mod_floor`.
-        let (sign, mag) = match (self.is_negative(), modulus.is_negative()) {
+        let (sign, mag) = match (
+            self.is_negative() && exponent.is_odd(),
+            modulus.is_negative(),
+        ) {
             (false, false) => (Plus, result),
             (true, false) => (Plus, &modulus.data - result),
             (false, true) => (Minus, &modulus.data - result),
